@@ -1,6 +1,8 @@
 package com.example.cloudnative.service;
 
 import com.example.cloudnative.model.Customer;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
@@ -14,27 +16,17 @@ import java.util.List;
 
 @Component
 public class CustomerService {
-    private final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
-    public CustomerService(DataSource dataSource) {
-        this.dataSource = dataSource;
+    public CustomerService(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public Collection<Customer> findAll() {
-        List<Customer> customerList = new ArrayList<>();
-        try {
-            try (Connection c = dataSource.getConnection()) {
-                Statement statement = c.createStatement();
-                try (ResultSet rs = statement.executeQuery("select * from CUSTOMERS")) {
-                    while (rs.next()) {
-                        customerList.add(new Customer(rs.getLong("ID"), rs.getString("EMAIL")));
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return customerList;
+        RowMapper<Customer> rowMapper = (rs, i) -> new Customer(rs.getLong("id"),
+                rs.getString("email"));
+        return jdbcTemplate.query("select * from CUSTOMERS", rowMapper);
     }
+
 
 }
